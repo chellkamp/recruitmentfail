@@ -141,15 +141,19 @@ Function ChooseFileFromDlg {
     [OutputType([String])]
     Param (
         [String] $dlgTitle, #title of dialog box
-        [String] $dlgFilter #file filter for dialog box
+        [String] $dlgFilter, #file filter for dialog box
+        [switch] $SetToUserProfile
     )
-    [System.Windows.Forms.OpenFileDialog] $fileDlg = $null
     [System.Windows.Forms.DialogResult] $dlgResult = [System.Windows.Forms.DialogResult]::None
+    [System.Windows.Forms.OpenFileDialog] $fileDlg = New-Object System.Windows.Forms.OpenFileDialog
+
+    If ($SetToUserProfile) {
+        $fileDlg.InitialDirectory = [Environment]::GetEnvironmentVariable("USERPROFILE")
+    }
+
 
     #Choose file from dialog
-    $fileDlg = New-Object System.Windows.Forms.OpenFileDialog
-    $fileDlg.Title = $dlgTitle
-    $fileDlg.InitialDirectory = [Environment]::GetEnvironmentVariable("USERPROFILE")
+    $fileDlg.Title = $dlgTitle    
     $fileDlg.Filter = $dlgFilter
     $dlgResult = $fileDlg.ShowDialog()
 
@@ -278,8 +282,8 @@ Function BuildSecGroupFile {
 
 [String] $srcBundleFullPath = JoinToFullPath $buildFullPath "$($deployConfig.name)-$($buildConfig).zip"
 
-[String] $customAppsettingsFullPath = ChooseFileFromDlg "Choose App Settings File" "JSON config files (*.json) | *.json"
 
+[String] $customAppsettingsFullPath = ChooseFileFromDlg "Choose App Settings File" "JSON config files (*.json) | *.json" -SetToUserProfile
 [String] $srcCertFullPath = ChooseFileFromDlg "Choose HTTPS Cert File" "cert files (*.pem) | *.pem"
 [String] $srcPrivateKeyFullPath = ChooseFileFromDlg "Choose HTTPS Private Key File" "key files (*.pem) | *.pem"
 
