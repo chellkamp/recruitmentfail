@@ -166,17 +166,17 @@ Function GetFullPathFromRel {
         [String] $relPath
     )
 
-    Return (New-Object -TypeName "System.IO.DirectoryInfo" (Join-Path $PSScriptRoot -ChildPath $relPath)).FullName
+    Return (New-Object -TypeName "System.IO.FileInfo" (Join-Path $PSScriptRoot -ChildPath $relPath)).FullName
 }
 
 Function JoinToFullPath {
     [OutputType([String])]
     Param (
+        [switch] $File,
         [String] $fullPath,
         [String] $childPath
     )
-
-    Return (New-Object -TypeName "System.IO.DirectoryInfo" (Join-Path $fullPath -ChildPath $childPath)).FullName
+    Return (New-Object -TypeName "System.IO.FileInfo" (Join-Path $fullPath -ChildPath $childPath)).FullName
 }
 
 Function CreateDirIfNotExists {
@@ -197,6 +197,18 @@ Function RemoveDirIfExists {
     If (Test-Path -LiteralPath $path) {
         Remove-Item -Recurse -Force -LiteralPath $path
     }
+}
+
+Function CreatePathAndCopy {
+    Param (
+        [String] $destPath,
+        [String] $srcPath
+    )
+
+    [String] $destDir = (New-Object -TypeName "System.IO.DirectoryInfo" $destPath).Parent.FullName
+    CreateDirIfNotExists $destDir
+
+    Copy-Item -LiteralPath $srcPath -Destination $destPath
 }
 
 # Merge one PSCustomObject into another
@@ -231,6 +243,25 @@ Function MergeInto {
 
 }
 
+Function BuildSecGroupFile {
+    Param (
+        [String] $destPath,
+        [String] $srcTemplatePath,
+        [String] $certPath,
+        [String] $keyPath
+    )
+    [System.Collections.Generic.List[String]] $srcTemplateContents = New-Object -TypeName 'System.Collections.Generic.List[String]'  -ArgumentList @(,[System.IO.File]::ReadAllLines($srcTemplatePath))
+    [String[]] $httpsCertContents = [System.IO.File]::ReadAllLines($certPath)
+    [String[]] $httpsKeyContents = [System.IO.File]::ReadAllLines($keyPath)
+
+    $srcTemplateContents = ReplaceinYAML $srcTemplateContents '[[CERT_CONTENTS]]' $httpsCertContents
+    $srcTemplateContents = ReplaceinYAML $srcTemplateContents '[[PRIVATE_KEY_CONTENTS]]' $httpsKeyContents
+
+    [String] $destDir = (New-Object -TypeName "System.IO.DirectoryInfo" $destPath).Parent.FullName
+    CreateDirIfNotExists $destDir
+    WriteLinesToUnixFile $destPath $srcTemplateContents
+}
+
 [String] $buildConfig = Tern $debug "Debug" "Release"
 
 
@@ -238,18 +269,28 @@ Function MergeInto {
 [String] $deployConfigFullPath = GetFullPathFromRel "deploy.config.json"
 [String] $buildFullPath = GetFullPathFromRel "..\BuildEB"
 [String] $tmpFullPath = JoinToFullPath $buildFullPath "tmp"
+[String] $srcNginxConfFullPath = GetFullPathFromRel "config\config.platform\nginx\nginx.conf"
+[String] $destNginxConfFullPath = JoinToFullPath "$tmpFullPath" ".platform\nginx\nginx.conf"
+[String] $srcSecurityGroupConfigFullPath = GetFullPathFromRel ".\config\config.ebextensions\https-instance-securitygroup.config"
+[String] $destSecurityGroupConfigFullPath = JoinToFullPath "$tmpFullPath" ".ebextensions\https-instance-securitygroup.config"
 
 [PSCustomObject] $deployConfig = Get-Content -LiteralPath $deployConfigFullPath | ConvertFrom-Json
 
 [String] $srcBundleFullPath = JoinToFullPath $buildFullPath "$($deployConfig.name)-$($buildConfig).zip"
 
-#Initialize additional information inside the deploy config object
-[String] $customAppsettingsFullPath = ChooseFileFromDlg "Choose App Settings for $($curEntry.name)" "JSON config files (*.json) | *.json"
+[String] $customAppsettingsFullPath = ChooseFileFromDlg "Choose App Settings File" "JSON config files (*.json) | *.json"
 
+[String] $srcCertFullPath = ChooseFileFromDlg "Choose HTTPS Cert File" "cert files (*.pem) | *.pem"
+[String] $srcPrivateKeyFullPath = ChooseFileFromDlg "Choose HTTPS Private Key File" "key files (*.pem) | *.pem"
+
+#Initialize additional information inside the deploy config object
 $deployConfig.projectFile = GetFullPathFromRel $deployConfig.projectFile
 
 # Delete directories holding old zip file contents
 RemoveDirIfExists $tmpFullPath
+
+# Delete zip file
+RemoveDirIfExists $srcBundleFullPath
 
 # Build and zip up the project
 
@@ -278,5 +319,12 @@ If ($LASTEXITCODE -ne 0) {
 
 MergeInto $destSettingsObj $srcSettingsObj
 WriteToFileUTF8 $publishedAppSettingsFileFullPath ($destSettingsObj | ConvertTo-Json -Depth 100)
+
+# Copy nginx.conf
+CreatePathAndCopy $destNginxConfFullPath $srcNginxConfFullPath
+
+# Configure HTTPS-related security groups
+BuildSecGroupFile $destSecurityGroupConfigFullPath $srcSecurityGroupConfigFullPath $srcCertFullPath $srcPrivateKeyFullPath
+
 
 &"$zipExePath" a -tzip "$srcBundleFullPath" "$($tmpFullPath)\*" -aoa
