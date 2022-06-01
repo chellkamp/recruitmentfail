@@ -1,0 +1,10 @@
+{
+  "name": "RecruitmentFail-SrcBundle",
+  "aspNetCoreWebDeployments": [
+    {
+      "name":  "RecruitmentFailWeb",
+      "projectFile": "../RecruitmentFailWeb/RecruitmentFailWeb.csproj",
+      "iisPath": "/"
+    }
+  ]
+}

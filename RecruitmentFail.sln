@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32421.90
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeployEB", "DeployEB", "{0FADE36D-0F6C-4AB9-806E-DD5F5141AA17}"
+	ProjectSection(SolutionItems) = preProject
+		DeployEB\deploy.config.json = DeployEB\deploy.config.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecruitmentFailWeb", "RecruitmentFailWeb\RecruitmentFailWeb.csproj", "{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {435EE3EE-FC81-4639-A29A-99E31BE6AB70}
+	EndGlobalSection
+EndGlobal
