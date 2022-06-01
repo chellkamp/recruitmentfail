@@ -231,100 +231,52 @@ Function MergeInto {
 
 }
 
-Function BuildManifest {
-    Param (
-        [String] $destFilePath,
-        [String] $templateFilePath,
-        [PSCustomObject] $deployConfigObj
-    )
-    [PSCustomObject] $deploymentObj = [PSCustomObject]@{aspNetCoreWeb = @()}
-    $deployConfigObj.aspNetCoreWebDeployments | ForEach {
-        [PSCustomObject] $parameters = [PSCustomObject]@{
-            appBundle = (New-Object -TypeName "System.IO.FileInfo" $_.zipFullPath).Name
-            iisPath = $_.iisPath
-            iisWebSite = "Default Web Site"
-        }
-
-        [PSCustomObject] $deployEntry = [PSCustomObject]@{
-            name = $_.name
-            parameters = $parameters
-        }
-
-        $deploymentObj.aspNetCoreWeb += [PSCustomObject]$deployEntry
-    }
-
-    [PSCustomObject] $manifestObj = Get-Content $templateFilePath | ConvertFrom-Json
-
-    MergeInto $manifestObj.deployments $deploymentObj
-
-    WriteToFileUTF8 $destFilePath ($manifestObj | ConvertTo-Json -Depth 100)
-}
 [String] $buildConfig = Tern $debug "Debug" "Release"
 
 
 [String] $zipExePath = "C:\Program Files\7-Zip\7z.exe"
 [String] $deployConfigFullPath = GetFullPathFromRel "deploy.config.json"
 [String] $buildFullPath = GetFullPathFromRel "..\BuildEB"
-[String] $tmpDeploymentsFullPath = JoinToFullPath $buildFullPath "tmp\deployments"
-[String] $tmpSrcBundleContentFullPath = JoinToFullPath $buildFullPath "tmp\source-bundle-contents"
-[String] $manifestSrcFullPath = GetFullPathFromRel "config\aws-windows-deployment-manifest.json"
-[String] $manifestDestFullPath = JoinToFullPath $tmpSrcBundleContentFullPath (New-Object -TypeName "System.IO.FileInfo" $manifestSrcFullPath).Name
-
+[String] $tmpFullPath = JoinToFullPath $buildFullPath "tmp"
 
 [PSCustomObject] $deployConfig = Get-Content -LiteralPath $deployConfigFullPath | ConvertFrom-Json
 
 [String] $srcBundleFullPath = JoinToFullPath $buildFullPath "$($deployConfig.name)-$($buildConfig).zip"
 
 #Initialize additional information inside the deploy config object
-$deployConfig.aspNetCoreWebDeployments | ForEach {
-    [PSCustomObject] $curEntry = $_
-    [String] $customAppsettingsFullPath = ChooseFileFromDlg "Choose App Settings for $($curEntry.name)" "JSON config files (*.json) | *.json"
+[String] $customAppsettingsFullPath = ChooseFileFromDlg "Choose App Settings for $($curEntry.name)" "JSON config files (*.json) | *.json"
 
-    $curEntry | Add-Member -MemberType NoteProperty -Name "appSettingsFullPath" -Value $customAppsettingsFullPath
-    $curEntry.projectFile = GetFullPathFromRel $curEntry.projectFile
-    $curEntry | Add-Member -MemberType NoteProperty -Name "zipFullPath" -Value (JoinToFullPath $tmpSrcBundleContentFullPath "$($curEntry.name).zip")
-    $curEntry | Add-Member -MemberType NoteProperty -Name "tmpFolder" -Value (JoinToFullPath $tmpDeploymentsFullPath "$($curEntry.name)")
-}
+$deployConfig.projectFile = GetFullPathFromRel $deployConfig.projectFile
 
 # Delete directories holding old zip file contents
-RemoveDirIfExists $tmpDeploymentsFullPath
-RemoveDirIfExists $tmpSrcBundleContentFullPath
+RemoveDirIfExists $tmpFullPath
 
-# Build and zip up the deployments
-$deployConfig.aspNetCoreWebDeployments | ForEach {
-    [PSCustomObject] $curEntry = $_
+# Build and zip up the project
 
-    Write-Host "Building $($curEntry.projectFile)..."
+Write-Host "Building $($deployConfig.projectFile)..."
 
-    dotnet msbuild "`"$($curEntry.projectFile)`"" "-t:Clean,Rebuild" "-p:Configuration=$buildConfig"
+dotnet build "`"$($deployConfig.projectFile)`"" "-t:Clean,Rebuild" "-p:Configuration=$buildConfig"
 
-    If ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to build $($curEntry.projectFile)"
-        Exit
-    }
+If ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to build $($deployConfig.projectFile)"
+    Exit
+}
 
-    CreateDirIfNotExists $curEntry.tmpFolder
-    dotnet publish "-o:`"$($curEntry.tmpFolder)`"" "`"$($curEntry.projectFile)`""
-    If ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to publish $($curEntry.projectFile)"
-        Exit
-    }
+CreateDirIfNotExists $tmpFullPath
+dotnet publish "-o:`"$tmpFullPath`"" "`"$($deployConfig.projectFile)`""
+If ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to publish $($curEntry.projectFile)"
+    Exit
+}
 
 
-    # Merge the app settings from the user-selected file into the file in the publishing folder
+# Merge the app settings from the user-selected file into the file in the publishing folder
 
-    [String] $publishedAppSettingsFileFullPath = JoinToFullPath $curEntry.tmpFolder "appsettings.json"
-    [PSCustomObject] $destSettingsObj = Get-Content -Path $publishedAppSettingsFileFullPath | ConvertFrom-Json 
-    [PSCustomObject] $srcSettingsObj = Get-Content -Path $curEntry.appSettingsFullPath | ConvertFrom-Json
+[String] $publishedAppSettingsFileFullPath = JoinToFullPath $tmpFullPath "appsettings.json"
+[PSCustomObject] $destSettingsObj = Get-Content -Path $publishedAppSettingsFileFullPath | ConvertFrom-Json 
+[PSCustomObject] $srcSettingsObj = Get-Content -Path $customAppSettingsFullPath | ConvertFrom-Json
 
-    MergeInto $destSettingsObj $srcSettingsObj
-    WriteToFileUTF8 $publishedAppSettingsFileFullPath ($destSettingsObj | ConvertTo-Json -Depth 100)
+MergeInto $destSettingsObj $srcSettingsObj
+WriteToFileUTF8 $publishedAppSettingsFileFullPath ($destSettingsObj | ConvertTo-Json -Depth 100)
 
-    &"$zipExePath" a -tzip "$($curEntry.zipFullPath)" "$($curEntry.tmpFolder)\*" -aoa
-} # end loop over config deployments
-
-# Build manifest file
-BuildManifest $manifestDestFullPath $manifestSrcFullPath $deployConfig
-
-# Manifest file is built.  Zip up the final source bundle.
-&"$zipExePath" a -tzip "$srcBundleFullPath" "$($tmpSrcBundleContentFullPath)\*" -aoa
+&"$zipExePath" a -tzip "$srcBundleFullPath" "$($tmpFullPath)\*" -aoa
