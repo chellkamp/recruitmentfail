@@ -1,0 +1,57 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@using RecruitmentFailWeb.Models.Account;
+@model NewUserDetails
+@{
+    ViewData["Title"] = "Create Account";
+}
+
+
+@using (Html.BeginForm("AttemptCreate", "AccountAPI", FormMethod.Post))
+{
+    <div class="row">
+        @Html.LabelFor(m => m.Email, null, new {@class="control-label col-md-3"})
+        <div class="form-group col-md-5">
+            @Html.EditorFor(m => m.Email, new {htmlAttributes = new {@class="form-control"}})
+            @Html.ValidationMessageFor(m => m.Email, null, new {@class="text-danger"})
+        </div>
+    </div>
+    <div class="row">
+        @Html.LabelFor(m => m.Password, null, new {@class="control-label col-md-3"})
+        <div class="form-group col-md-5">
+            @Html.PasswordFor(m => m.Password, new {@class="form-control"})
+            @Html.ValidationMessageFor(m => m.Password, null, new {@class="text-danger"})
+        </div>
+    </div>
+    <div class="row">
+        @Html.LabelFor(m => m.PasswordConfirm, null, new {@class="control-label col-md-3"})
+        <div class="form-group col-md-5">
+            @Html.PasswordFor(m => m.PasswordConfirm, new {@class="form-control"})
+            @Html.ValidationMessageFor(m => m.PasswordConfirm, null, new {@class="text-danger"})
+        </div>
+    </div>
+
+    <input type="submit" value="Submit"/>
+}
+
+
+@section scripts
+{
+    <script>
+        $.validator.addMethod('cognitopassword', RecruitmentFailValidation.validateCognitoPassword);
+        $.validator.unobtrusive.adapters.add(
+            'cognitopassword',
+            ['minlength', 'maxlength', 'requiredchars'],
+            function(options) {
+                options.rules['cognitopassword'] = [
+                    parseInt(options.params['minlength']),
+                    parseInt(options.params['maxlength']),
+                    parseInt(options.params['requiredchars'])
+                ];
+
+                options.messages['cognitopassword'] = 'Password does not meet requirements.';
+            }
+        );
+    </script>
+}

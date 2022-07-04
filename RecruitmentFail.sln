@@ -8,7 +8,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeployEB", "DeployEB", "{0F
 		DeployEB\deploy.config.json = DeployEB\deploy.config.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RecruitmentFailWeb", "RecruitmentFailWeb\RecruitmentFailWeb.csproj", "{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecruitmentFailWeb", "RecruitmentFailWeb\RecruitmentFailWeb.csproj", "{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unit Test", "Unit Test\Unit Test.csproj", "{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +22,10 @@ Global
 		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

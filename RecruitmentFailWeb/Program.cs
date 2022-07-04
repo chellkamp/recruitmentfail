@@ -1,7 +1,13 @@
+using MicrosoftAnnotations = Microsoft.AspNetCore.Mvc.DataAnnotations;
+
+using RecruitmentFailWeb.Models.DataAnnotations;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddSingleton<MicrosoftAnnotations.IValidationAttributeAdapterProvider, ValidationAttributeAdapterProvider>();
 
 var app = builder.Build();
 
