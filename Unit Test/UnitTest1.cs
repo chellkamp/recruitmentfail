@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.ComponentModel.DataAnnotations;
 
 using RecruitmentFailWeb.Models.DataAnnotations;
 
@@ -121,6 +122,39 @@ namespace UnitTest
                 result,
                 "Password has no special characters, validation requires no special characters, but password rejected."
             );
+
+        }
+
+        [TestMethod]
+        public void TestConfirmValidation()
+        {
+            string passToMatch = "P@$$word123";
+
+            object testModel = new
+            {
+                Password = passToMatch
+            };
+
+            ValidationContext context = new ValidationContext(testModel);
+
+            // nominal case.  value matches Password field
+            ConfirmAttribute confirm = new ConfirmAttribute { MatchingFieldName = "Password" };
+            ValidationResult? result = confirm.GetValidationResult(passToMatch, context);
+            Assert.AreEqual(ValidationResult.Success, result);
+
+            // Password field is different
+            result = confirm.GetValidationResult("P@$$word321", context);
+            Assert.AreNotEqual(ValidationResult.Success, result);
+
+            // no "Password" field to speak of.
+            testModel = new { password = passToMatch };
+            context = new ValidationContext(testModel);
+            result = confirm.GetValidationResult(passToMatch, context);
+            Assert.AreNotEqual(ValidationResult.Success, result);
+
+            confirm.MatchingFieldName = "password";
+            result = confirm.GetValidationResult(passToMatch, context);
+            Assert.AreEqual(ValidationResult.Success, result);
 
         }
     }

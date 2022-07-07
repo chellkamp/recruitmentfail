@@ -247,3 +247,21 @@ RecruitmentFailValidation.validateCognitoPassword = function (
 
     return result.isValid;
 };
+
+/**
+ * check for two values matching
+ * @param {string} value
+ * @param {object} element
+ * @param {Array<object>} params [context, matchingFieldName]
+ */
+RecruitmentFailValidation.validateConfirm = function (
+    value,
+    element,
+    params
+) {
+    let context = params[0];
+    let matchingFieldName = params[1];
+    let srcVal = $(context).find(`[name='${matchingFieldName}'`).val();
+
+    return srcVal === value;
+}

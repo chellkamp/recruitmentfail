@@ -17,6 +17,7 @@ namespace RecruitmentFailWeb.Models.Account
         public String Password { get; set; }
 
         [Display(Name = "Confirm Password")]
+        [Confirm(MatchingFieldName = "Password")]
         public String PasswordConfirm { get; set; }
 
         public NewUserDetails()

@@ -145,50 +145,40 @@ namespace RecruitmentFailWeb.Models.DataAnnotations
         /// </summary>
         /// <param name="value">value</param>
         /// <returns>true if valid; false otherwise</returns>
-        public override bool IsValid(object? value)
+        protected override ValidationResult? IsValid(object? value, ValidationContext context)
         {
-            bool retVal = true;
+            ValidationResult? retVal = ValidationResult.Success;
             String? castVal = value as String;
 
             if (castVal == null)
             {
-                ErrorMessage = "Password required.";
-                retVal = false;
+                retVal = new ValidationResult("Password required.");
             }
 
             // Test length requirements
-            if (retVal)
+            if (retVal == ValidationResult.Success)
             {
                 int valLen = castVal!.Length;
-                retVal = MinLength <= valLen && valLen <= MaxLength;
-                if (!retVal)
+                if (!(MinLength <= valLen && valLen <= MaxLength))
                 {
-                    ErrorMessage = $"Password must be between {MinLength} and {MaxLength} characters.";
+                    retVal = new ValidationResult($"Password must be between {MinLength} and {MaxLength} characters.");
                 }
             }
 
             // Test if all characters are valid
-            if (retVal)
+            if (retVal == ValidationResult.Success && !_allValidCharRegex.IsMatch(castVal!))
             {
-                retVal = _allValidCharRegex.IsMatch(castVal!);
-                if (!retVal)
-                {
-                    ErrorMessage = "Password contains one or more invalid characters.";
-                }
+                retVal = new ValidationResult("Password contains one or more invalid characters.");
             }
 
             // Test if password contains at least one of each required type of character
-            for (int reqIdx = 0; retVal && reqIdx < _charValExps.Length; ++reqIdx)
+            for (int reqIdx = 0; retVal == ValidationResult.Success && reqIdx < _charValExps.Length; ++reqIdx)
             {
                 Tuple<CharacterOptions, Regex, String> curEntry = _charValExps[reqIdx];
 
-                if (IsRequired(curEntry.Item1))
+                if (IsRequired(curEntry.Item1) && !curEntry.Item2.IsMatch(castVal!))
                 {
-                    retVal = curEntry.Item2.IsMatch(castVal!);
-                    if (!retVal)
-                    {
-                        ErrorMessage = curEntry.Item3;
-                    }
+                    retVal = new ValidationResult(curEntry.Item3);
                 }
             }
 
@@ -201,9 +191,9 @@ namespace RecruitmentFailWeb.Models.DataAnnotations
         public class Adapter : AttributeAdapterBase<CognitoPasswordAttribute>
         {
             private const String _attrPrefix = "data-val-cognitopassword";
-            private static String _minLengthName;
-            private static String _maxLengthName;
-            private static String _requiredCharsName;
+            private static readonly String _minLengthName;
+            private static readonly String _maxLengthName;
+            private static readonly String _requiredCharsName;
 
             /// <summary>
             /// Static constructor

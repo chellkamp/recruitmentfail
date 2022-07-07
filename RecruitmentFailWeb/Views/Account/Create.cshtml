@@ -53,5 +53,18 @@
                 options.messages['cognitopassword'] = 'Password does not meet requirements.';
             }
         );
+
+        $.validator.addMethod('confirm', RecruitmentFailValidation.validateConfirm);
+        $.validator.unobtrusive.adapters.add(
+            'confirm',
+            ['matchingfieldname'],
+            function(options) {
+                let matchingFieldName = options.params['matchingfieldname'];
+                let context = options.form;
+
+                options.rules['confirm'] = [context, matchingFieldName];
+                options.messages['confirm'] = 'Passwords must match.';
+            }
+        );
     </script>
 }

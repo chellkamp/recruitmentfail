@@ -26,6 +26,10 @@ namespace RecruitmentFailWeb.Models.DataAnnotations
             {
                 retVal = new CognitoPasswordAttribute.Adapter((CognitoPasswordAttribute)attribute, stringLocalizer);
             }
+            else if (attribute is ConfirmAttribute)
+            {
+                retVal = new ConfirmAttribute.Adapter((ConfirmAttribute)attribute, stringLocalizer);
+            }
             return retVal;
         }
     }
