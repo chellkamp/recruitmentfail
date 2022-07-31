@@ -6,11 +6,18 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeployEB", "DeployEB", "{0FADE36D-0F6C-4AB9-806E-DD5F5141AA17}"
 	ProjectSection(SolutionItems) = preProject
 		DeployEB\deploy.config.json = DeployEB\deploy.config.json
+		DeployEB\MakeDotNetCoreSourceBundle.ps1 = DeployEB\MakeDotNetCoreSourceBundle.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RecruitmentFailWeb", "RecruitmentFailWeb\RecruitmentFailWeb.csproj", "{97F1DB2C-794D-4199-ACE6-C0DE8AB4D2F3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unit Test", "Unit Test\Unit Test.csproj", "{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unit Test", "Unit Test\Unit Test.csproj", "{8DC63A0E-147B-4C44-B8A4-FFA824E9536B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{F80F78A0-3AB3-4E85-9105-CE7D69C8C67F}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\CustomObjectUtil.psm1 = Scripts\CustomObjectUtil.psm1
+		Scripts\FileUtil.psm1 = Scripts\FileUtil.psm1
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

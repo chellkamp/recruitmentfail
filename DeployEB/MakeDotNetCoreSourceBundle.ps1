@@ -1,5 +1,4 @@
-﻿using namespace Microsoft.PowerShell.Commands
-using namespace System.Management.Automation
+﻿using namespace System.Management.Automation
 
 param (
     [switch]$debug = $false,
@@ -7,6 +6,9 @@ param (
 )
 
 Add-Type -AssemblyName "System.Windows.Forms"
+
+Import-Module (Join-Path $PSScriptRoot -ChildPath "..\Scripts\FileUtil.psm1") -Force
+Import-Module (Join-Path $PSScriptRoot -ChildPath "..\Scripts\CustomObjectUtil.psm1") -Force
 
 If ($debug -and $release) {
     Write-Error "Error: Cannot specify both -Debug and -Release flags.  Must be one or the other."
@@ -60,42 +62,6 @@ Function ReplaceinYAML {
 }
 
 
-Function WriteLinesToUnixFile {
-    Param (
-        [String] $filePath,
-        [System.Collections.Generic.IEnumerable[String]] $lines
-    )
-
-    [System.Text.UTF8Encoding] $encoding = New-Object -TypeName 'System.Text.UTF8Encoding' $false
-    [byte] $newLine = $encoding.GetBytes("`n")[0]
-
-
-    [System.IO.FileStream] $fs = New-Object -TypeName 'System.IO.FileStream' -ArgumentList @($filePath, [System.IO.FileMode]::Create)
-
-
-    $lines | ForEach-Object {
-        [byte[]] $bytes = $encoding.GetBytes($_)
-        $fs.Write($bytes, 0, $bytes.Length)
-        $fs.WriteByte($newLine)
-    }
-
-    $fs.Close()
-}
-
-Function WriteToFileUTF8 {
-    Param (
-        [String] $filePath,
-        [String] $contents
-    )
-
-    [System.Text.UTF8Encoding] $encoding = New-Object -TypeName 'System.Text.UTF8Encoding' $false
-    [byte[]] $bytes = $encoding.GetBytes($contents)
-    [System.IO.FileStream] $fs = New-Object -TypeName 'System.IO.FileStream' -ArgumentList @($filePath, [System.IO.FileMode]::Create)
-    $fs.Write($bytes, 0, $bytes.Length)
-    $fs.Close()
-}
-
-
 Function GetFileList {
     [OutputType([System.Collections.Generic.List[String]])]
     Param (
@@ -136,117 +102,6 @@ Function GetFileList {
 }
 
 
-# Open a dialog box for the user to select a file
-Function ChooseFileFromDlg {
-    [OutputType([String])]
-    Param (
-        [String] $dlgTitle, #title of dialog box
-        [String] $dlgFilter, #file filter for dialog box
-        [switch] $SetToUserProfile
-    )
-    [System.Windows.Forms.DialogResult] $dlgResult = [System.Windows.Forms.DialogResult]::None
-    [System.Windows.Forms.OpenFileDialog] $fileDlg = New-Object System.Windows.Forms.OpenFileDialog
-
-    If ($SetToUserProfile) {
-        $fileDlg.InitialDirectory = [Environment]::GetEnvironmentVariable("USERPROFILE")
-    }
-
-
-    #Choose file from dialog
-    $fileDlg.Title = $dlgTitle    
-    $fileDlg.Filter = $dlgFilter
-    $dlgResult = $fileDlg.ShowDialog()
-
-    If($dlgResult -ne [System.Windows.Forms.DialogResult]::OK) {
-        Exit
-    }
-
-    Return $fileDlg.FileName
-}
-
-Function GetFullPathFromRel {
-    [OutputType([String])]
-    Param(
-        [String] $relPath
-    )
-
-    Return (New-Object -TypeName "System.IO.FileInfo" (Join-Path $PSScriptRoot -ChildPath $relPath)).FullName
-}
-
-Function JoinToFullPath {
-    [OutputType([String])]
-    Param (
-        [switch] $File,
-        [String] $fullPath,
-        [String] $childPath
-    )
-    Return (New-Object -TypeName "System.IO.FileInfo" (Join-Path $fullPath -ChildPath $childPath)).FullName
-}
-
-Function CreateDirIfNotExists {
-    Param (
-        [String] $path
-    )
-
-    If (-not (Test-Path -LiteralPath $path)) {
-        New-Item -Path $path -ItemType Directory -Force
-    }
-}
-
-Function RemoveDirIfExists {
-    Param (
-        [String] $path
-    )
-
-    If (Test-Path -LiteralPath $path) {
-        Remove-Item -Recurse -Force -LiteralPath $path
-    }
-}
-
-Function CreatePathAndCopy {
-    Param (
-        [String] $destPath,
-        [String] $srcPath
-    )
-
-    [String] $destDir = (New-Object -TypeName "System.IO.DirectoryInfo" $destPath).Parent.FullName
-    CreateDirIfNotExists $destDir
-
-    Copy-Item -LiteralPath $srcPath -Destination $destPath
-}
-
-# Merge one PSCustomObject into another
-Function MergeInto {
-    Param (
-        [PSCustomObject] $dest,
-        [PSCustomObject] $src
-    )
-
-    $src | Get-Member | ForEach {
-        [MemberDefinition] $curMember = $_
-        If ($curMember.MemberType -eq [PSMemberTypes]::NoteProperty) {
-            [String] $propName = $curMember.Name
-            [MemberDefinition] $destMember = $dest | Get-Member -Name $propName -MemberType NoteProperty
-            If ($destMember -ne $null) {
-
-                # If the source and destination prop are both custom objects, then merge them.
-                If (($src.$propName -is [PSCustomObject]) -and ($dest.$propName -is [PSCustomObject])) {
-                    MergeInto $dest.$propName $src.$propName
-                } Else {
-
-                    # Overwrite the destination prop with the source prop for all other type combos
-                    $dest.$propName = $src.$propName
-                }
-            } Else {
-
-                # Completely new prop for the destination object
-                $dest | Add-Member -MemberType NoteProperty -Name $propName -Value $src.$propName
-            }
-        }
-    }
-
-}
-
 Function BuildSecGroupFile {
     Param (
         [String] $destPath,
@@ -270,12 +125,12 @@ Function BuildSecGroupFile {
 
 
 [String] $zipExePath = "C:\Program Files\7-Zip\7z.exe"
-[String] $deployConfigFullPath = GetFullPathFromRel "deploy.config.json"
-[String] $buildFullPath = GetFullPathFromRel "..\BuildEB"
+[String] $deployConfigFullPath = JoinToFullPath $PSScriptRoot "deploy.config.json"
+[String] $buildFullPath = JoinToFullPath $PSScriptRoot "..\BuildEB"
 [String] $tmpFullPath = JoinToFullPath $buildFullPath "tmp"
-[String] $srcNginxConfFullPath = GetFullPathFromRel "config\config.platform\nginx\nginx.conf"
+[String] $srcNginxConfFullPath = JoinToFullPath $PSScriptRoot "config\config.platform\nginx\nginx.conf"
 [String] $destNginxConfFullPath = JoinToFullPath "$tmpFullPath" ".platform\nginx\nginx.conf"
-[String] $srcSecurityGroupConfigFullPath = GetFullPathFromRel ".\config\config.ebextensions\https-instance-securitygroup.config"
+[String] $srcSecurityGroupConfigFullPath = JoinToFullPath $PSScriptRoot ".\config\config.ebextensions\https-instance-securitygroup.config"
 [String] $destSecurityGroupConfigFullPath = JoinToFullPath "$tmpFullPath" ".ebextensions\https-instance-securitygroup.config"
 
 [PSCustomObject] $deployConfig = Get-Content -LiteralPath $deployConfigFullPath | ConvertFrom-Json
@@ -288,7 +143,7 @@ Function BuildSecGroupFile {
 [String] $srcPrivateKeyFullPath = ChooseFileFromDlg "Choose HTTPS Private Key File" "key files (*.pem) | *.pem"
 
 #Initialize additional information inside the deploy config object
-$deployConfig.projectFile = GetFullPathFromRel $deployConfig.projectFile
+$deployConfig.projectFile = JoinToFullPath $PSScriptRoot $deployConfig.projectFile
 
 # Delete directories holding old zip file contents
 RemoveDirIfExists $tmpFullPath
@@ -298,17 +153,14 @@ RemoveDirIfExists $srcBundleFullPath
 
 # Build and zip up the project
 
-Write-Host "Building $($deployConfig.projectFile)..."
-
-dotnet build "`"$($deployConfig.projectFile)`"" "-t:Clean,Rebuild" "-p:Configuration=$buildConfig"
-
-If ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to build $($deployConfig.projectFile)"
-    Exit
-}
+Write-Host "Building $($deployConfig.projectFile) for $($buildConfig)..."
 
 CreateDirIfNotExists $tmpFullPath
-dotnet publish "-o:`"$tmpFullPath`"" "`"$($deployConfig.projectFile)`""
+
+Write-Host "Publishing..."
+
+dotnet publish "-o:`"$tmpFullPath`"" "`"$($deployConfig.projectFile)`"" "-t:Clean,Rebuild" "-p:MergePrivateSettings=false;Configuration=$buildConfig"
+
 If ($LASTEXITCODE -ne 0) {
     Write-Error "Failed to publish $($curEntry.projectFile)"
     Exit

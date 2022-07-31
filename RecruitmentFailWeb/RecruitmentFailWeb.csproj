@@ -1,4 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <Compile Remove="Private\**" />
+    <Content Remove="Private\**" />
+    <EmbeddedResource Remove="Private\**" />
+    <None Remove="Private\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Private/*" />
+  </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -9,5 +20,13 @@
   <PropertyGroup>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <MergePrivateSettings>true</MergePrivateSettings>
+  </PropertyGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if '$(MergePrivateSettings)' == 'true' (&#xD;&#xA;  if exist &quot;$(MSBuildProjectDirectory)\Private\privatesettings.json&quot; (&#xD;&#xA;    call powershell.exe &quot;$(MSBuildProjectDirectory)\Scripts\MergePrivateSettings.ps1&quot; -PrivateSettingsFile '$(MSBuildProjectDirectory)\Private\privatesettings.json' -ProjectSettingsFile '$(MSBuildProjectDirectory)\$(OutputPath)appsettings.json'&#xD;&#xA;  )&#xD;&#xA;)" />
+  </Target>
 
 </Project>
