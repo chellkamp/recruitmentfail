@@ -1,0 +1,58 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@using RecruitmentFailWeb.Models.Account;
+
+@model VerificationDetails
+
+@{
+    ViewData["Title"] = "Confirm Email Address";
+}
+
+<div class="container">
+ 
+    @if (Model.IsVerified)
+    {
+        <div class="row my-2">
+            <div class="col-md-6">
+                <p>The user for <span class="fw-bold">@Model.Email</span> is already verified.</p>
+            </div>
+        </div>
+    }
+    else if (Model.Email == String.Empty)
+    {
+        <div class="row my-2">
+            <div class="col-md-6">
+                <p>Data for this page has expired.  Please attempt to log in again.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        @using (Html.BeginForm("ConfirmEmail", "Account", FormMethod.Post))
+        {
+            <div class="row my-2">
+                @Html.ValidationSummary(true, null, new {@class="text-danger col-md-6"})
+            </div>
+            <div class="row my-2">
+                <div class="col-md-6">
+                    <p>A verification mail should have been sent to <span class="fw-bold">@Model.Email</span>.</p>
+
+                    <p>Verify your email address by clicking on the link provided in the email.</p>
+
+                    <p>
+                        If you don't see the email, wait a few more minutes and check your spam folders.  If you still didn't get a verification
+                        email, click the button below to resend it.
+                    </p>
+                </div>
+            </div>
+            <div class="row my-4">
+                <div class="text-end col-md-6">
+                    <button class="btn btn-primary" type="submit" value="Send Confirmation Link">Send Confirmation Link</button>
+                </div>
+            </div>
+        }
+
+    }
+
+</div>

@@ -30,6 +30,10 @@ namespace RecruitmentFailWeb.Models.DataAnnotations
             {
                 retVal = new ConfirmAttribute.Adapter((ConfirmAttribute)attribute, stringLocalizer);
             }
+            else
+            {
+                retVal = _baseProvider.GetAttributeAdapter(attribute, stringLocalizer);
+            }
             return retVal;
         }
     }

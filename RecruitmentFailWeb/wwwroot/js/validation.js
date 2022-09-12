@@ -228,6 +228,7 @@ RecruitmentFailValidation.CognitoPasswordValidator = class {
  * @param {string} value
  * @param {object} element
  * @param {Array<object>} params
+ * @returns {boolean} true if valid; false otherwise
  */
 RecruitmentFailValidation.validateCognitoPassword = function (
     value, // value of element
@@ -253,6 +254,7 @@ RecruitmentFailValidation.validateCognitoPassword = function (
  * @param {string} value
  * @param {object} element
  * @param {Array<object>} params [context, matchingFieldName]
+ * @returns {boolean} true if valid; false otherwise
  */
 RecruitmentFailValidation.validateConfirm = function (
     value,
@@ -265,3 +267,4 @@ RecruitmentFailValidation.validateConfirm = function (
 
     return srcVal === value;
 }
+
